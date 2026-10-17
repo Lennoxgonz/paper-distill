@@ -68,13 +68,13 @@ with st.sidebar.expander("**Abstract Summary**"):
 with st.sidebar.expander("**Paper Summary**"):
     st.markdown(
         """
-        The paper summary feature summarizes the entire paper based on two user selected parameters, length and technical complexity. The summary is created using `gemini-2.5-flash-lite`, a Large Language Model developed by Google that is accessible through the Gemini Developer API.\n\n
+        The paper summary feature summarizes the entire paper based on two user selected parameters, length and technical complexity. The summary is created using `gemini-3.8-flash`, a Large Language Model developed by Google that is accessible through the Gemini Developer API.\n\n
         The paper is downloaded as a pdf, then converted into markdown text, then passed into the model along with a prompt instructing the model to summarize the paper into a certain number of paragraphs at a certain technical complexity. \n\n
         An API is used here rather than a model run locally like in the abstract summary feature due to the fact that scientific papers can be quite long and to summarize one requires a model that can maintain coherence across thousands of tokens. Models like this end up being very large and can be impractical to run locally.\n\n
         Gemini AI architecture excels at processing long-context tasks through specialized attention mechanisms that maintain understanding across thousands of tokens, while innovations like sliding window attention enable efficient referencing of earlier information, making it powerful for analyzing lengthy documents and complex content.
         """
     )
-    st.link_button("Gemini model docs (`gemini-2.5-flash-lite`)", "https://ai.google.dev/gemini-api/docs/models")
+    st.link_button("Gemini model docs (`gemini-3.8-flash`)", "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash")
     if st.button("Read the Gemini 1.5 paper"):
         open_reference_paper("2403.05530")
 
@@ -82,11 +82,11 @@ with st.sidebar.expander("**Paper Summary**"):
 with st.sidebar.expander("**Ask Questions**"):
     st.markdown(
         """
-        The ask questions feature is a **multi-turn chat** about the paper using `gemini-2.5-flash-lite` through the Gemini developer API. The full paper PDF is uploaded once (via the Gemini Files API) on the first message so the model can use **multimodal** context, including figures and layout. Follow-up questions stay in the same conversation so earlier answers remain in context.\n\n
+        The ask questions feature is a **multi-turn chat** about the paper using `gemini-3.8-flash` through the Gemini developer API. The full paper PDF is uploaded once (via the Gemini Files API) on the first message so the model can use **multimodal** context, including figures and layout. Follow-up questions stay in the same conversation so earlier answers remain in context.\n\n
         This differs from the paper summary tab, which still converts the PDF to markdown for text-only summarization.
         """
     )
-    st.link_button("Gemini model docs (`gemini-2.5-flash-lite`)", "https://ai.google.dev/gemini-api/docs/models")
+    st.link_button("Gemini model docs (`gemini-3.8-flash`)", "https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash")
     if st.button("Read the Gemini 1.5 paper", key="ask_questions_button"):
         open_reference_paper("2403.05530")
 
