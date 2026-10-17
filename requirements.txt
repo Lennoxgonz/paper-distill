@@ -132,8 +132,10 @@ pillow==12.3.0
     # via streamlit
 protobuf==6.33.6
     # via streamlit
-pyarrow==26.0.0
-    # via streamlit
+pyarrow==24.0.0
+    # via
+    #   -r requirements.in
+    #   streamlit
 pyasn1==0.6.4
     # via pyasn1-modules
 pyasn1-modules==0.4.2

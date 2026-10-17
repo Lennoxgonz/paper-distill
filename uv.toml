@@ -1,0 +1,2 @@
+# Consider every index so PyPI pins like certifi resolve alongside the PyTorch CPU index.
+index-strategy = "unsafe-best-match"

@@ -1,3 +1,6 @@
+# CPU wheels for torch. uv.toml sets index-strategy so Community Cloud's uv
+# install still takes certifi and the other PyPI pins from PyPI. Without that,
+# uv treats this index as the only source for certifi and the deploy fails.
 --extra-index-url https://download.pytorch.org/whl/cpu
 
 # Direct project dependencies only.
@@ -6,5 +9,7 @@ google-genai==1.5.0
 nltk==3.10.3
 pymupdf4llm==0.0.17
 streamlit==1.54.0
+# 26.x segfaults on Community Cloud (apache/arrow#50471). Streamlit allows >=7.
+pyarrow>=7,<25
 torch==2.14.1+cpu
 transformers==5.20.1
