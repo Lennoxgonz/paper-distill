@@ -22,14 +22,14 @@ The project is configured to run locally with a Python virtual environment (`.ve
 **Windows (PowerShell):**
 
 ```bash
-py -3.11 -m venv .venv
+py -3.14 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 ```
 
 **macOS/Linux (bash/zsh):**
 
 ```bash
-python3.11 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate
 ```
 
@@ -84,7 +84,7 @@ pip install -r requirements.txt
 ```bash
 deactivate
 Remove-Item -Recurse -Force .venv
-py -3.11 -m venv .venv
+py -3.14 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
@@ -95,7 +95,7 @@ pip install -r requirements.txt
 ```bash
 deactivate
 rm -rf .venv
-python3.11 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
 pip install -r requirements.txt
