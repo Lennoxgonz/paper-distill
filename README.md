@@ -10,7 +10,7 @@ Search for scientific papers and get customized summarization and the ability to
 - **UI:** Streamlit
 - **Paper source:** arXiv API
 - **Local summarization:** Hugging Face Transformers (`sshleifer/distilbart-cnn-12-6`)
-- **Long-context summarization and Q&A:** Google Gemini API (`gemini-2.5-flash-lite`)
+- **Long-context summarization and Q&A:** Google Gemini API (`gemini-3.8-flash`)
 - **PDF parsing:** `pymupdf4llm`
 
 ## Local Setup (Virtual Environment)
@@ -120,7 +120,7 @@ BART (Bidirectional and Auto-Regressive Transformers) architecture was developed
 [Learn more about arXiv](https://arxiv.org/abs/1910.13461v1)
 
 ### Paper Summary
-The paper summary feature summarizes the entire paper based on two user selected parameters, length and technical complexity. The summary is created using Gemini 2.5 Flash-Lite, a Large Language Model developed by Google that is accessible through the Gemini Developer API.
+The paper summary feature summarizes the entire paper based on two user selected parameters, length and technical complexity. The summary is created using Gemini 3.8 Flash, a Large Language Model developed by Google that is accessible through the Gemini Developer API.
 
 The paper is downloaded as a pdf, then converted into markdown text, then passed into the model along with a prompt instructing the model to summarize the paper into a certain number of paragraphs at a certain technical complexity.
 
@@ -128,15 +128,15 @@ An API is used here rather than a model run locally like in the abstract summary
 
 Gemini AI architecture excels at processing long-context tasks through specialized attention mechanisms that maintain understanding across thousands of tokens, while innovations like sliding window attention enable efficient referencing of earlier information, making it powerful for analyzing lengthy documents and complex content.
 
-[Learn more about Gemini models](https://ai.google.dev/gemini-api/docs/models)
+[Learn more about Gemini models](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash)
 
 [Read the Gemini 1.5 paper](https://arxiv.org/abs/2403.05530v5)
 
 ### Ask Questions
-The ask questions feature is a **multi-turn chat** about the paper using Gemini 2.5 Flash-Lite through the Gemini developer API. The full paper PDF is uploaded once (via the Gemini Files API) on the first message so the model receives **multimodal** input, including figures and layout. Later questions stay in the same conversation so prior answers remain in context.
+The ask questions feature is a **multi-turn chat** about the paper using Gemini 3.8 Flash through the Gemini developer API. The full paper PDF is uploaded once (via the Gemini Files API) on the first message so the model receives **multimodal** input, including figures and layout. Later questions stay in the same conversation so prior answers remain in context.
 
 The paper summary feature still converts the PDF to markdown for text-only summarization; ask questions uses the PDF directly for richer context.
 
-[Learn more about Gemini models](https://ai.google.dev/gemini-api/docs/models)
+[Learn more about Gemini models](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash)
 
 [Read the Gemini 1.5 paper](https://arxiv.org/abs/2403.05530v5)

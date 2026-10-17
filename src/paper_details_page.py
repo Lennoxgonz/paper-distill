@@ -30,7 +30,7 @@ else:
         st.session_state._paper_cache_id = _pid
 
 client = genai.Client(api_key=st.secrets["google_ai_studio_api_key"])
-GEMINI_MODEL = "gemini-2.5-flash-lite"
+GEMINI_MODEL = "gemini-3.8-flash"
 
 ASK_QUESTIONS_SYSTEM = (
     "You are extremely knowledgeable about the paper in question, answer the question based on "
