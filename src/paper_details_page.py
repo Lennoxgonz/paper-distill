@@ -12,25 +12,39 @@ from arxiv_client import get_paper_by_id
 from categories import categories_dict
 from paths import ensure_papers_dir
 
-if st.session_state.get("selected_paper_id") is None:
-    st.switch_page("search_page.py")
+GEMINI_MODEL = "gemini-3.8-flash"
 
-_pid = st.session_state.selected_paper_id
-if st.session_state.get("_paper_cache_id") == _pid and st.session_state.get("_paper_cache") is not None:
-    paper = st.session_state._paper_cache
-else:
-    paper = get_paper_by_id(_pid)
-    if paper is None:
+
+def _ensure_selected_paper():
+    if st.session_state.get("selected_paper_id") is None:
+        st.switch_page("search_page.py")
+    pid = st.session_state.selected_paper_id
+    if st.session_state.get("_paper_cache_id") == pid and st.session_state.get("_paper_cache") is not None:
+        return
+    loaded = get_paper_by_id(pid)
+    if loaded is None:
         st.session_state.selected_paper_id = None
         st.session_state.pop("_paper_cache", None)
         st.session_state.pop("_paper_cache_id", None)
         st.switch_page("search_page.py")
-    else:
-        st.session_state._paper_cache = paper
-        st.session_state._paper_cache_id = _pid
+    st.session_state._paper_cache = loaded
+    st.session_state._paper_cache_id = pid
 
-client = genai.Client(api_key=st.secrets["google_ai_studio_api_key"])
-GEMINI_MODEL = "gemini-3.8-flash"
+
+_ensure_selected_paper()
+
+
+def _paper():
+    return st.session_state._paper_cache
+
+
+def _paper_id():
+    return st.session_state.selected_paper_id
+
+
+@st.cache_resource
+def _gemini_client():
+    return genai.Client(api_key=st.secrets["google_ai_studio_api_key"])
 
 ASK_QUESTIONS_SYSTEM = (
     "You are extremely knowledgeable about the paper in question, answer the question based on "
@@ -39,7 +53,7 @@ ASK_QUESTIONS_SYSTEM = (
 )
 
 def _safe_paper_filename_id() -> str:
-    return re.sub(r"[^\w.\-]", "_", _pid)
+    return re.sub(r"[^\w.\-]", "_", _paper_id())
 
 
 def local_pdf_path() -> Path:
@@ -51,7 +65,7 @@ def clear_ask_questions_state(*, delete_uploaded_file: bool) -> None:
         gf = st.session_state.get("ask_questions_gemini_file")
         if gf is not None and getattr(gf, "name", None):
             try:
-                client.files.delete(name=gf.name)
+                _gemini_client().files.delete(name=gf.name)
             except Exception:
                 pass
         st.session_state.ask_questions_gemini_file = None
@@ -75,20 +89,21 @@ def _wait_for_file_active(gf: types.File, max_wait_s: float = 120.0) -> types.Fi
                 getattr(gf, "error", None) or "Gemini file processing failed."
             )
         time.sleep(0.5 if gf.state is None else 1.0)
-        gf = client.files.get(name=gf.name)
+        gf = _gemini_client().files.get(name=gf.name)
     return gf
 
 
 def download_paper_pdf(path: Path) -> None:
-    if not paper.pdf_url:
+    pdf_url = _paper().pdf_url
+    if not pdf_url:
         raise RuntimeError("This paper does not have a PDF.")
-    urlretrieve(paper.pdf_url, path)
+    urlretrieve(pdf_url, path)
 
 
 def ensure_gemini_pdf_file() -> types.File:
     path = local_pdf_path()
     download_paper_pdf(path)
-    uploaded = client.files.upload(
+    uploaded = _gemini_client().files.upload(
         file=str(path),
         config=types.UploadFileConfig(mime_type="application/pdf"),
     )
@@ -105,17 +120,17 @@ def run_ask_questions_turn(user_text: str) -> str:
 
     chat = st.session_state.get("ask_questions_gemini_chat")
     if chat is None:
-        chat = client.chats.create(model=GEMINI_MODEL, config=cfg)
+        chat = _gemini_client().chats.create(model=GEMINI_MODEL, config=cfg)
         st.session_state.ask_questions_gemini_chat = chat
         response = chat.send_message([gemini_file, user_text])
     else:
         response = chat.send_message(user_text)
 
-    st.session_state.ask_questions_chat_paper_id = _pid
+    st.session_state.ask_questions_chat_paper_id = _paper_id()
     return response.text
 
 
-if st.session_state.get("ask_questions_chat_paper_id") is not None and st.session_state.ask_questions_chat_paper_id != _pid:
+if st.session_state.get("ask_questions_chat_paper_id") not in (None, _paper_id()):
     clear_ask_questions_state(delete_uploaded_file=True)
 
 if st.button("Back to search"):
@@ -135,7 +150,7 @@ def paper_pdf_to_markdown():
 def summarize_abstract(length):
     from utils import summarize_text
 
-    abstract = paper.summary
+    abstract = _paper().summary
     abstract_length = len(abstract.split())
 
     length = round(length / 100 * abstract_length)
@@ -165,7 +180,7 @@ def summarize_paper(length, complexity):
     # System instructions for gemini
     sys_instruct = f"Condense this academic paper into a summary with a length of {length} paragraphs. Write it using vocabulary terms and explanations appropriate for a {complexity} student, but still keep it informative and professional. Do not add any formatting or introduction, simply return the requested number of paragraphs of summarized content."
 
-    response = client.models.generate_content(
+    response = _gemini_client().models.generate_content(
         model=GEMINI_MODEL,
         config=types.GenerateContentConfig(
             system_instruction=sys_instruct),
@@ -174,6 +189,7 @@ def summarize_paper(length, complexity):
     st.session_state.paper_summary = response.text
 
 
+paper = _paper()
 with st.container():
     st.header(paper.title, anchor=False)
 
@@ -225,8 +241,11 @@ with tabs[2]:
             "PhD",
         ])
     if st.button("Generate Paper Summary", key="paper_summary_button"):
-        with st.spinner(f"Generating {technical_complexity} level paper summary..."):
-            summarize_paper(length, technical_complexity)
+        try:
+            with st.spinner(f"Generating {technical_complexity} level paper summary..."):
+                summarize_paper(length, technical_complexity)
+        except Exception as e:
+            st.error(f"Could not summarize the paper: {e}")
     if st.session_state.paper_summary is not None:
         st.markdown(st.session_state.paper_summary)
 
