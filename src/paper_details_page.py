@@ -1,6 +1,7 @@
 import re
 import time
 from pathlib import Path
+from urllib.request import urlretrieve
 
 import streamlit as st
 from nltk import sent_tokenize
@@ -78,9 +79,15 @@ def _wait_for_file_active(gf: types.File, max_wait_s: float = 120.0) -> types.Fi
     return gf
 
 
+def download_paper_pdf(path: Path) -> None:
+    if not paper.pdf_url:
+        raise RuntimeError("This paper does not have a PDF.")
+    urlretrieve(paper.pdf_url, path)
+
+
 def ensure_gemini_pdf_file() -> types.File:
     path = local_pdf_path()
-    paper.download_pdf(filename=str(path))
+    download_paper_pdf(path)
     uploaded = client.files.upload(
         file=str(path),
         config=types.UploadFileConfig(mime_type="application/pdf"),
@@ -121,7 +128,7 @@ if st.button("Back to search"):
 
 def paper_pdf_to_markdown():
     path = local_pdf_path()
-    paper.download_pdf(filename=str(path))
+    download_paper_pdf(path)
     return pymupdf4llm.to_markdown(str(path))
 
 

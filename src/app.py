@@ -29,9 +29,9 @@ if 'ask_questions_chat_paper_id' not in st.session_state:
 
 # Download nltk data (if needed)
 try:
-    nltk.data.find("tokenizers/punkt")
+    nltk.data.find("tokenizers/punkt_tab")
 except LookupError:
-    nltk.download("punkt")
+    nltk.download("punkt_tab")
 
 st.sidebar.title("How it works")
 
