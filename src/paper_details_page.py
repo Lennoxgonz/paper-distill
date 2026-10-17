@@ -133,9 +133,8 @@ def paper_pdf_to_markdown():
 
 
 def summarize_abstract(length):
-    from utils import load_summarizer
+    from utils import summarize_text
 
-    summarizer = load_summarizer()
     abstract = paper.summary
     abstract_length = len(abstract.split())
 
@@ -157,10 +156,9 @@ def summarize_abstract(length):
 
     # Generate abstract summary with a length padding of 10 in each direction
     # This is to give the model some leeway in generating the summary
-    summary = summarizer(
-        abstract, max_length=length + 10, min_length=length - 10, do_sample=False
-    )[0]["summary_text"]
-    st.session_state.abstract_summary = summary
+    st.session_state.abstract_summary = summarize_text(
+        abstract, max_length=length + 10, min_length=length - 10
+    )
 
 
 def summarize_paper(length, complexity):
@@ -205,8 +203,11 @@ with tabs[1]:
         "Summary Length(In percentage of original size)", 10, 100)
 
     if st.button("Generate Abstract Summary", key="abstract_summary_button"):
-        with st.spinner("Generating abstract summary..."):
-            summarize_abstract(length)
+        try:
+            with st.spinner("Generating abstract summary..."):
+                summarize_abstract(length)
+        except Exception as e:
+            st.error(f"Could not summarize the abstract: {e}")
     if st.session_state.abstract_summary is not None:
         st.markdown(st.session_state.abstract_summary)
 
