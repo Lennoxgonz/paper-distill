@@ -7,12 +7,37 @@ import streamlit as st
 from nltk import sent_tokenize
 from google import genai
 from google.genai import types
+from google.genai.errors import APIError
 import pymupdf4llm
 from arxiv_client import get_paper_by_id
 from categories import categories_dict
 from paths import ensure_papers_dir
 
 GEMINI_MODEL = "gemini-3.8-flash"
+# 429/5xx from Gemini are capacity blips. Retry them before showing an error.
+_RETRYABLE_CODES = {429, 500, 502, 503, 504}
+_GEMINI_ATTEMPTS = 4
+
+
+def _gemini_call(call):
+    delay = 1.0
+    for attempt in range(_GEMINI_ATTEMPTS):
+        try:
+            return call()
+        except APIError as exc:
+            if exc.code not in _RETRYABLE_CODES or attempt == _GEMINI_ATTEMPTS - 1:
+                raise
+            time.sleep(delay)
+            delay *= 2
+
+
+def _gemini_error_text(exc: Exception) -> str:
+    if isinstance(exc, APIError) and exc.code in (429, 503):
+        return (
+            f"Gemini is temporarily overloaded (HTTP {exc.code}). "
+            "Wait a minute and try again."
+        )
+    return str(exc)
 
 
 def _ensure_selected_paper():
@@ -122,9 +147,9 @@ def run_ask_questions_turn(user_text: str) -> str:
     if chat is None:
         chat = _gemini_client().chats.create(model=GEMINI_MODEL, config=cfg)
         st.session_state.ask_questions_gemini_chat = chat
-        response = chat.send_message([gemini_file, user_text])
+        response = _gemini_call(lambda: chat.send_message([gemini_file, user_text]))
     else:
-        response = chat.send_message(user_text)
+        response = _gemini_call(lambda: chat.send_message(user_text))
 
     st.session_state.ask_questions_chat_paper_id = _paper_id()
     return response.text
@@ -180,11 +205,13 @@ def summarize_paper(length, complexity):
     # System instructions for gemini
     sys_instruct = f"Condense this academic paper into a summary with a length of {length} paragraphs. Write it using vocabulary terms and explanations appropriate for a {complexity} student, but still keep it informative and professional. Do not add any formatting or introduction, simply return the requested number of paragraphs of summarized content."
 
-    response = _gemini_client().models.generate_content(
-        model=GEMINI_MODEL,
-        config=types.GenerateContentConfig(
-            system_instruction=sys_instruct),
-        contents=[paper_pdf_to_markdown()]
+    markdown = paper_pdf_to_markdown()
+    response = _gemini_call(
+        lambda: _gemini_client().models.generate_content(
+            model=GEMINI_MODEL,
+            config=types.GenerateContentConfig(system_instruction=sys_instruct),
+            contents=[markdown],
+        )
     )
     st.session_state.paper_summary = response.text
 
@@ -245,7 +272,7 @@ with tabs[2]:
             with st.spinner(f"Generating {technical_complexity} level paper summary..."):
                 summarize_paper(length, technical_complexity)
         except Exception as e:
-            st.error(f"Could not summarize the paper: {e}")
+            st.error(_gemini_error_text(e), title="Could not summarize the paper")
     if st.session_state.paper_summary is not None:
         st.markdown(st.session_state.paper_summary)
 
@@ -286,4 +313,4 @@ with tabs[3]:
                 st.rerun()
             except Exception as e:
                 st.session_state.ask_questions_messages.pop()
-                st.error(f"Could not get a response: {e}")
+                st.error(_gemini_error_text(e), title="Could not get a response")
